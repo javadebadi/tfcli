@@ -53,6 +53,36 @@ func TestValidate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "existing but invalid hosted_on",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "ALIBABA", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing backend_buckets entry",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					// intentionally empty — "prod" key missing
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

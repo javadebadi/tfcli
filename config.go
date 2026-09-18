@@ -7,17 +7,34 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// HostedOn restricts which cloud providers are valid
+type HostedOn string
+
+const (
+	AWS HostedOn = "AWS"
+	GCP HostedOn = "GCP"
+)
+
+// isValidHostedOn checks whether this HostedOn value is one of the known providers
+func (h HostedOn) isValidHostedOn() bool {
+	switch h {
+	case AWS, GCP:
+		return true
+	}
+	return false
+}
+
 type Env struct {
-	HostedOn     string `yaml:"hosted_on"`
-	AWSProfile   string `yaml:"aws_profile"`
-	GCPProjectID string `yaml:"gcp_project_id"`
-	InfraDir     string `yaml:"infra_dir"`
+	HostedOn     HostedOn `yaml:"hosted_on"`
+	AWSProfile   string   `yaml:"aws_profile"`
+	GCPProjectID string   `yaml:"gcp_project_id"`
+	InfraDir     string   `yaml:"infra_dir"`
 }
 
 type BackendBucket struct {
-	HostedOn   string `yaml:"hosted_on"`
-	BucketName string `yaml:"bucket_name"`
-	Region     string `yaml:"region"`
+	HostedOn   HostedOn `yaml:"hosted_on"`
+	BucketName string   `yaml:"bucket_name"`
+	Region     string   `yaml:"region"`
 }
 
 type Config struct {
@@ -46,7 +63,6 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
-// validate checks the config is complete and internally consistent
 func (c Config) validate() error {
 	if len(c.Envs) == 0 {
 		return fmt.Errorf("config has no environments defined under 'envs'")
@@ -56,8 +72,8 @@ func (c Config) validate() error {
 		if env.InfraDir == "" {
 			return fmt.Errorf("env %q is missing infra_dir", name)
 		}
-		if env.HostedOn == "" {
-			return fmt.Errorf("env %q is missing hosted_on", name)
+		if !env.HostedOn.isValidHostedOn() {
+			return fmt.Errorf("env %q has invalid hosted_on %q (must be AWS or GCP)", name, env.HostedOn)
 		}
 
 		if _, ok := c.BackendBuckets[name]; !ok {
