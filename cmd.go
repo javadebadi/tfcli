@@ -63,11 +63,36 @@ var tfvarsCmd = &cobra.Command{
 	},
 }
 
+var createBackendBucketCmd = &cobra.Command{
+	Use:   "create-backend-bucket",
+	Short: "Generate the terraform backend bucket for the given environment to store terraform state",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := createBackendBucket(config, envName)
+		if err == nil {
+			fmt.Println("Backend bucket exists for env=", envName)
+		} else {
+			fmt.Println("Error in creating backend bucket: ", err)
+		}
+	},
+}
+var createBackendBucketIfNotExistsCmd = &cobra.Command{
+	Use:   "create-backend-bucket-if-not-exists",
+	Short: "If the backend bucket does not exist, it generates the terraform backend bucket for the given environment to store terraform state.",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := createBackendBucketIfNotExists(config, envName)
+		if err != nil {
+			fmt.Println("Error in creating or getting backend bucket: ", err)
+		}
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVar(&envName, "env", "", "environment name (e.g. prod, staging)")
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", "config.yaml", "path to the config YAML file")
 
 	rootCmd.AddCommand(tfvarsCmd)
+	rootCmd.AddCommand(createBackendBucketCmd)
+	rootCmd.AddCommand(createBackendBucketIfNotExistsCmd)
 }
 
 // Execute runs the root command — called from main()
