@@ -47,17 +47,31 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		env, ok := config.Envs[envName]
+		_, ok := config.Envs[envName]
 		if !ok {
 			fmt.Println("unknown environment:", envName)
 			os.Exit(1)
 		}
 
-		if err := writeTfvars(envName, env.InfraDir, config.Tfvars[envName]); err != nil {
+		infraDir, err := config.getInfraDir(envName)
+		if err != nil {
+			fmt.Println("error in finding infraDir:", infraDir)
+			os.Exit(1)
+		}
+
+		if err := writeTfvars(envName, infraDir, config.Tfvars[envName]); err != nil {
 			fmt.Println("error writing tfvars:", err)
 			os.Exit(1)
 		}
 	},
+}
+
+// a help to run terraform init before the taking another action
+func runWithInit(c Config, env string, action func(Config, string) error) error {
+	if err := tfInit(c, env); err != nil {
+		return fmt.Errorf("terraform init failed: %w", err)
+	}
+	return action(c, env)
 }
 
 var tfvarsCmd = &cobra.Command{
@@ -93,11 +107,51 @@ var createBackendBucketIfNotExistsCmd = &cobra.Command{
 }
 var tfInitCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Runs terraform init for a given environment based on config file",
+	Short: "Runs terraform init for a given environment",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := tfInit(config, envName)
 		if err != nil {
 			fmt.Println("Error in terraform init: ", err)
+		}
+	},
+}
+var tfPlanCmd = &cobra.Command{
+	Use:   "plan",
+	Short: "Runs terraform plan for a given environment",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runWithInit(config, envName, tfPlan); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+var tfValidateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Runs terraform validate",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runWithInit(config, envName, tfValidate); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+var tfAutoformatCmd = &cobra.Command{
+	Use:   "autoformat",
+	Short: "Runs terraform autoformat/fmt",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runWithInit(config, envName, tfAutoformat); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+var tfCheckAutoformatCmd = &cobra.Command{
+	Use:   "check-autoformat",
+	Short: "Runs terraform autoformat/fmt to check format is correct",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runWithInit(config, envName, tfCheckAutoformat); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
 		}
 	},
 }
@@ -110,6 +164,10 @@ func init() {
 	rootCmd.AddCommand(createBackendBucketCmd)
 	rootCmd.AddCommand(createBackendBucketIfNotExistsCmd)
 	rootCmd.AddCommand(tfInitCmd)
+	rootCmd.AddCommand(tfPlanCmd)
+	rootCmd.AddCommand(tfValidateCmd)
+	rootCmd.AddCommand(tfAutoformatCmd)
+	rootCmd.AddCommand(tfCheckAutoformatCmd)
 }
 
 // Execute runs the root command — called from main()

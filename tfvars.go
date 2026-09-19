@@ -11,7 +11,7 @@ func writeTfvars(env string, infraDir string, vars map[string]interface{}) (err 
 		return err
 	}
 
-	path := filepath.Join(infraDir, env+".tfvars")
+	path := filepath.Join(infraDir, getEnvVarsFileName(env))
 
 	f, err := os.Create(path)
 	if err != nil {
