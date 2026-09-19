@@ -29,8 +29,14 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		// check required flags exist
 		if envName == "" {
 			fmt.Println("--env is required")
+			os.Exit(1)
+		}
+
+		if configPath == "" {
+			fmt.Println("--config is required")
 			os.Exit(1)
 		}
 
@@ -88,7 +94,7 @@ var createBackendBucketIfNotExistsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&envName, "env", "", "environment name (e.g. prod, staging)")
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", "config.yaml", "path to the config YAML file")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "path to the config YAML file")
 
 	rootCmd.AddCommand(tfvarsCmd)
 	rootCmd.AddCommand(createBackendBucketCmd)
