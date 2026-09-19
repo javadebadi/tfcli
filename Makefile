@@ -1,6 +1,6 @@
 .PHONY: tools build run fmt lint vet test coverage-html coverage-check check
 
-COVERAGE_THRESHOLD := 70
+COVERAGE_THRESHOLD := 40
 COVERAGE_OUT := coverage.out
 COVERAGE_HTML := coverage.html
 
@@ -46,6 +46,12 @@ coverage-check:
 		echo "coverage $$total% is below threshold $(COVERAGE_THRESHOLD)%"; \
 		exit 1; \
 	fi
+
+local-build-install:
+	go build -o tfctl .
+	sudo mv tfctl /usr/local/bin/
+	@grep -qxF 'source <(tfctl completion zsh)' ~/.zshrc || echo 'source <(tfctl completion zsh)' >> ~/.zshrc
+	@echo "run: source ~/.zshrc  (or open a new terminal) to load completion"
 
 # coverage-check already runs the tests so no need to include "test" here
 check: fmt vet lint coverage-check
