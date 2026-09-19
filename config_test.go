@@ -321,3 +321,65 @@ func TestGetBackendBucket(t *testing.T) {
 	}
 
 }
+
+func TestGetInfraDir_ValidDir(t *testing.T) {
+
+	// create temp root directory and infra folder as subfolder
+	dir := t.TempDir()
+	subDir := filepath.Join(dir, "terraform")
+	err := os.Mkdir(subDir, 0755)
+	if err != nil {
+		t.Fatalf("failed to create sub-directory: %v", err)
+	}
+
+	// Given a config
+	config = Config{
+		ProjectRoot: dir,
+		Envs: map[string]Env{
+			"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+		},
+		BackendBuckets: map[string]BackendBucket{
+			"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: "us-central1"},
+		},
+		Tfvars: map[string]map[string]interface{}{
+			"prod": {},
+		},
+	}
+
+	// When getInfraDir is called to get backend bucket for "prod" environment
+	val, err := config.getInfraDir(("prod"))
+
+	// Then no errors should be raised
+	if err != nil {
+		t.Errorf("getInfraDir(\"prod\") error raised error = %v", err)
+	}
+	if val != subDir {
+		t.Errorf("returned %v != expected %v", val, subDir)
+	}
+
+}
+func TestGetInfraDir_InfraDirDoesNotExist(t *testing.T) {
+
+	// Given a config
+	config = Config{
+		ProjectRoot: "./non_existing_folder",
+		Envs: map[string]Env{
+			"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+		},
+		BackendBuckets: map[string]BackendBucket{
+			"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: "us-central1"},
+		},
+		Tfvars: map[string]map[string]interface{}{
+			"prod": {},
+		},
+	}
+
+	// When getInfraDir is called to get backend bucket for "prod" environment
+	_, err := config.getInfraDir(("prod"))
+
+	// Then it should see error is raised
+	if err == nil {
+		t.Errorf("Non existing root project didn't cause and error")
+	}
+
+}

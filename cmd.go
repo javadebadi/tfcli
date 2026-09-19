@@ -91,6 +91,16 @@ var createBackendBucketIfNotExistsCmd = &cobra.Command{
 		}
 	},
 }
+var tfInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Runs terraform init for a given environment based on config file",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := tfInit(config, envName)
+		if err != nil {
+			fmt.Println("Error in terraform init: ", err)
+		}
+	},
+}
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&envName, "env", "", "environment name (e.g. prod, staging)")
@@ -99,6 +109,7 @@ func init() {
 	rootCmd.AddCommand(tfvarsCmd)
 	rootCmd.AddCommand(createBackendBucketCmd)
 	rootCmd.AddCommand(createBackendBucketIfNotExistsCmd)
+	rootCmd.AddCommand(tfInitCmd)
 }
 
 // Execute runs the root command — called from main()

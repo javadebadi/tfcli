@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -38,6 +39,7 @@ type BackendBucket struct {
 }
 
 type Config struct {
+	ProjectRoot    string                            `yaml:"project_root"`
 	Envs           map[string]Env                    `yaml:"envs"`
 	BackendBuckets map[string]BackendBucket          `yaml:"backend_buckets"`
 	Tfvars         map[string]map[string]interface{} `yaml:"tfvars"`
@@ -117,4 +119,17 @@ func (c Config) getBackendBucket(env string) (string, error) {
 	}
 	return bucketInfo.BucketName, nil
 
+}
+
+func (c Config) getInfraDir(env string) (string, error) {
+	infraDir := c.Envs[env].InfraDir
+	if c.ProjectRoot != "" {
+		infraDir = filepath.Join(c.ProjectRoot, c.Envs[env].InfraDir)
+	}
+
+	if _, err := os.Stat(infraDir); os.IsNotExist(err) {
+		return "", fmt.Errorf("infra_dir %q does not exist", infraDir)
+	}
+
+	return infraDir, nil
 }
