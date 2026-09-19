@@ -64,6 +64,16 @@ func loadConfig(path string) (Config, error) {
 }
 
 func (c Config) validate() error {
+	if err := c.validateEnvs(); err != nil {
+		return err
+	}
+	if err := c.validateBackendBuckets(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c Config) validateEnvs() error {
 	if len(c.Envs) == 0 {
 		return fmt.Errorf("config has no environments defined under 'envs'")
 	}
@@ -84,5 +94,18 @@ func (c Config) validate() error {
 		}
 	}
 
+	return nil
+}
+
+func (c Config) validateBackendBuckets() error {
+
+	for name, bucketInfo := range c.BackendBuckets {
+		if bucketInfo.BucketName == "" {
+			return fmt.Errorf("backend bucket for env %q has no bucket_name ", name)
+		}
+		if !bucketInfo.HostedOn.isValidHostedOn() {
+			return fmt.Errorf("backend bucket for env %q has invalid hosted_on %q", name, bucketInfo.HostedOn)
+		}
+	}
 	return nil
 }

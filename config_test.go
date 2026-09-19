@@ -15,13 +15,28 @@ func TestValidate(t *testing.T) {
 					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
 				},
 				BackendBuckets: map[string]BackendBucket{
-					"prod": {},
+					"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: "us-central1"},
 				},
 				Tfvars: map[string]map[string]interface{}{
 					"prod": {},
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "config has no envs",
+			config: Config{
+				Envs: map[string]Env{
+					// intentionally empty — "prod" key missing
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: ""},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "missing infra_dir",
@@ -79,6 +94,51 @@ func TestValidate(t *testing.T) {
 				},
 				Tfvars: map[string]map[string]interface{}{
 					"prod": {},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing backend_buckets bucket_name",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {HostedOn: "GCP", BucketName: "", Region: ""},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid backend_buckets hosted_on",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {HostedOn: "BAD_HOSTED_ON", BucketName: "terraform-state-prod", Region: ""},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing tfvars entry",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: ""},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					// intentionally empty — "prod" key missing
 				},
 			},
 			wantErr: true,
