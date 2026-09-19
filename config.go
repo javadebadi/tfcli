@@ -109,3 +109,12 @@ func (c Config) validateBackendBuckets() error {
 	}
 	return nil
 }
+
+func (c Config) getBackendBucket(env string) (string, error) {
+	bucketInfo, ok := c.BackendBuckets[env]
+	if !ok {
+		return "", fmt.Errorf("no bucket info for env %v", env)
+	}
+	return bucketInfo.BucketName, nil
+
+}

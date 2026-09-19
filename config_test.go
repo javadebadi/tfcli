@@ -260,3 +260,64 @@ func TestLoadConfig_InvalidYAML(t *testing.T) {
 		t.Error("expected an error for invalid YAML, got nil")
 	}
 }
+
+func TestGetBackendBucket(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   Config
+		wantErr  bool
+		expected string
+	}{
+		{
+			name: "get backend bucket for a valid config",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					"prod": {HostedOn: "GCP", BucketName: "terraform-state-prod", Region: "us-central1"},
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr:  false,
+			expected: "terraform-state-prod",
+		},
+		{
+			name: "Invalid Config",
+			config: Config{
+				Envs: map[string]Env{
+					"prod": {HostedOn: "GCP", InfraDir: "terraform"},
+				},
+				BackendBuckets: map[string]BackendBucket{
+					// intentionally empty — "prod" key missing
+				},
+				Tfvars: map[string]map[string]interface{}{
+					"prod": {},
+				},
+			},
+			wantErr:  true,
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Given a config from the table (tt.config)
+
+			// When getBackendBucket is called to get backend bucket for "prod" environment
+			val, err := tt.config.getBackendBucket(("prod"))
+
+			// Then it should match the expected error state
+			gotErr := err != nil
+			if gotErr != tt.wantErr {
+				t.Errorf("getBackendBucket(\"prod\") error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if val != tt.expected {
+				t.Errorf("returned %v != expected %v", val, tt.expected)
+			}
+		})
+	}
+
+}
